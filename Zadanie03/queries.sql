@@ -59,6 +59,21 @@ ORDER BY
                      graczy, co może pomóc w zrozumieniu recepcji gry przez społeczność.
 */
 
+SELECT RECOPI.Tytul, RECOPI.Ocena, RECOPI.DataOpublikowania
+FROM (
+         SELECT Gry.Tytul, Recenzje.Ocena, Recenzje.DataOpublikowania
+         FROM Recenzje
+                  INNER JOIN dbo.GryNaPlatformach GNP on Recenzje.IdGry = GNP.IdGry and Recenzje.IdPlatformy = GNP.IdPlatformy
+                  INNER JOIN Gry ON GNP.IdGry = Gry.Id
+         UNION
+         SELECT Gry.Tytul, Opinie.Ocena, Opinie.DataOpublikowania
+         FROM Opinie
+                  INNER JOIN dbo.OpinieGryNaPlatformach OGNP on Opinie.Id = OGNP.IdOpinii
+                  INNER JOIN Gry ON OGNP.IdGry = Gry.Id
+     ) RECOPI
+WHERE RECOPI.Tytul LIKE 'Cyberpunk 2077';
+
+
 
 /*
     Zapytanie 04:    Wśród użytkowników oceniających gry ukrywają się trolle. Wykonaj zestawienie
@@ -66,6 +81,29 @@ ORDER BY
                      pkt.) do negatywnych (<25 pkt.) jest mniejszy niż 10%, a jednocześnie nie mają na
                      swoim koncie żadnej listy ulubionych gier.
 */
+
+WITH StatystykaOcen AS (
+    SELECT
+        G.Id,
+        COUNT(CASE WHEN CAST(O.Ocena AS FLOAT) < 25 THEN 1 END) AS IloscOcenMniejNiz25,
+        COUNT(CASE WHEN CAST(O.Ocena AS FLOAT) > 75 THEN 1 END) AS IloscOcenWiecejNiz75
+    FROM
+        Opinie O
+            JOIN OpinieGracze OG ON O.Id = OG.IdOpinii
+            JOIN Gracze G ON OG.IdGracza = G.Id
+    GROUP BY
+        G.Id
+)
+
+SELECT
+    G.Pseudonim AS Gracz,
+    ISNULL(SO.IloscOcenMniejNiz25, 0) AS IloscOcenMniejNiz25,
+    ISNULL(SO.IloscOcenWiecejNiz75, 0) AS IloscOcenWiecejNiz75,
+    (CAST(ISNULL(SO.IloscOcenWiecejNiz75, 0)+1 AS FLOAT) / CAST(ISNULL(SO.IloscOcenMniejNiz25, 0)+1 AS FLOAT)) AS StosunekPozytywnychDoNegatywnychOpinii
+FROM
+    Gracze G
+        LEFT JOIN StatystykaOcen SO ON G.Id = SO.Id
+WHERE (CAST(ISNULL(SO.IloscOcenWiecejNiz75, 0)+1 AS FLOAT) / CAST(ISNULL(SO.IloscOcenMniejNiz25, 0)+1 AS FLOAT)) < 0.1;
 
 /*
     Zapytanie 05:    Sporządź ranking 10 wydawców, których wydane gry mają najwięcej pozytywnych
