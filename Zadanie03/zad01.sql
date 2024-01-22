@@ -205,3 +205,97 @@ INSERT INTO OpinieGracze (IdOpinii, IdGracza) VALUES
                                                   ((SELECT Id FROM Opinie WHERE Tytul = 'Opinia Trolla o grze 19'), (SELECT Id FROM Gracze WHERE Pseudonim = 'Gracz11')),
                                                   ((SELECT Id FROM Opinie WHERE Tytul = 'Opinia Trolla o grze 20'), (SELECT Id FROM Gracze WHERE Pseudonim = 'Gracz11'));
 GO;
+-- Dodaj brakujące wydawcy
+INSERT INTO Wydawcy (Nazwa) VALUES
+                                ('Rockstar Games'),
+                                ('Capcom'),
+                                ('Bethesda Softworks'),
+                                ('Square Enix');
+GO;
+-- Dodaj brakujących producentów
+INSERT INTO Producenci (Nazwa) VALUES
+                                   ('BioWare'),
+                                   ('FromSoftware'),
+                                   ('Valve'),
+                                   ('Blizzard Entertainment'),
+                                   ('Ubisoft Quebec'),
+                                   ('EA DICE'),
+                                   ('Rockstar Studios'),
+                                   ('Infinity Ward');
+GO;
+-- Dodaj więcej gier i recenzji dla różnych wydawców
+INSERT INTO Gry (Tytul, IdWydawcy, IdProducenta) VALUES
+                                                     ('Battlefield V', (SELECT Id FROM Wydawcy WHERE Nazwa = 'EA'), (SELECT Id FROM Producenci WHERE Nazwa = 'EA DICE')),
+                                                     ('Call of Duty: Warzone', (SELECT Id FROM Wydawcy WHERE Nazwa = 'Activision'), (SELECT Id FROM Producenci WHERE Nazwa = 'Infinity Ward')),
+                                                     ('Assassin''s Creed Odyssey', (SELECT Id FROM Wydawcy WHERE Nazwa = 'Ubisoft'), (SELECT Id FROM Producenci WHERE Nazwa = 'Ubisoft Quebec')),
+                                                     ('Red Dead Redemption 2', (SELECT Id FROM Wydawcy WHERE Nazwa = 'Rockstar Games'), (SELECT Id FROM Producenci WHERE Nazwa = 'Rockstar Studios')),
+                                                     ('FIFA 23', (SELECT Id FROM Wydawcy WHERE Nazwa = 'EA'), (SELECT Id FROM Producenci WHERE Nazwa = 'EA Sports')),
+                                                     ('Cyberpunk 2088', (SELECT Id FROM Wydawcy WHERE Nazwa = 'CD Projekt RED'), (SELECT Id FROM Producenci WHERE Nazwa = 'CD Projekt RED'));
+GO;
+-- Dodaj GryNaPlatformach dla nowych recenzji
+INSERT INTO GryNaPlatformach (IdGry, IdPlatformy, DataWydania)
+VALUES
+    ((SELECT Id FROM Gry WHERE Tytul = 'Battlefield V'), (SELECT Id FROM Platformy WHERE Nazwa = 'PC'), '2021-08-15'),
+    ((SELECT Id FROM Gry WHERE Tytul = 'Call of Duty: Warzone'), (SELECT Id FROM Platformy WHERE Nazwa = 'PC'), '2021-07-20'),
+    ((SELECT Id FROM Gry WHERE Tytul = 'Assassin''s Creed Odyssey'), (SELECT Id FROM Platformy WHERE Nazwa = 'PC'), '2021-05-05'),
+    ((SELECT Id FROM Gry WHERE Tytul = 'Red Dead Redemption 2'), (SELECT Id FROM Platformy WHERE Nazwa = 'PC'), '2021-04-02'),
+    ((SELECT Id FROM Gry WHERE Tytul = 'FIFA 23'), (SELECT Id FROM Platformy WHERE Nazwa = 'PlayStation 5'), '2022-09-30'),
+    ((SELECT Id FROM Gry WHERE Tytul = 'Cyberpunk 2088'), (SELECT Id FROM Platformy WHERE Nazwa = 'PC'), '2023-01-10');
+
+GO;
+-- Dodaj recenzje od krytyków niewspółpracujących z wydawcami
+INSERT INTO Recenzje (Tytul, Zawartosc, DataOpublikowania, IdPlatformy, IdGry, Ocena)
+VALUES
+    ('Recenzja Battlefield V', 'Wspaniała gra wojenna, rewelacyjna kampania.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'PC'), (SELECT Id FROM Gry WHERE Tytul = 'Battlefield V'), 90),
+    ('Recenzja Call of Duty: Warzone', 'Najlepszy tryb battle royale na rynku.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'PC'), (SELECT Id FROM Gry WHERE Tytul = 'Call of Duty: Warzone'), 85),
+    ('Recenzja Assassin''s Creed Odyssey', 'Epickie przygody w starożytnej Grecji.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'PC'), (SELECT Id FROM Gry WHERE Tytul = 'Assassin''s Creed Odyssey'), 88),
+    ('Recenzja Red Dead Redemption 2', 'Arcydzieło wśród gier otwartego świata.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'PC'), (SELECT Id FROM Gry WHERE Tytul = 'Red Dead Redemption 2'), 95),
+    ('Recenzja FIFA 23', 'Najnowsza odsłona serii, jeszcze lepsza niż poprzednia.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'PlayStation 5'), (SELECT Id FROM Gry WHERE Tytul = 'FIFA 23'), 88),
+    ('Recenzja Cyberpunk 2088', 'Kontynuacja Cyberpunk 2077, pełna niespodzianek.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'PC'), (SELECT Id FROM Gry WHERE Tytul = 'Cyberpunk 2088'), 82);
+
+-- Dodaj więcej krytyków niewspółpracujących z wydawcami
+INSERT INTO Krytycy (Imie, Nazwisko) VALUES
+                                         ('Krytyk1', 'Bezstronny'),
+                                         ('Krytyk2', 'Niepowiązany'),
+                                         ('Krytyk3', 'Obiektywny');
+INSERT INTO KrytycyWydawcy (IdKrytyka, IdWydawcy) VALUES
+                                                      ((SELECT Id FROM Krytycy WHERE Nazwisko LIKE 'Bezstronny'), (SELECT Id FROM Wydawcy WHERE Nazwa LIKE 'EA'));
+GO;
+-- Dodaj GryNaPlatformach dla nowych recenzji
+INSERT INTO GryNaPlatformach (IdGry, IdPlatformy, DataWydania)
+VALUES
+    ((SELECT Id FROM Gry WHERE Tytul = 'Battlefield V'), (SELECT Id FROM Platformy WHERE Nazwa = 'Xbox Series X'), '2021-08-20'),
+    ((SELECT Id FROM Gry WHERE Tytul = 'Call of Duty: Warzone'), (SELECT Id FROM Platformy WHERE Nazwa = 'PlayStation 5'), '2021-08-21'),
+    ((SELECT Id FROM Gry WHERE Tytul = 'Assassin''s Creed Odyssey'), (SELECT Id FROM Platformy WHERE Nazwa = 'Xbox Series X'), '2021-08-22'),
+    ((SELECT Id FROM Gry WHERE Tytul = 'Red Dead Redemption 2'), (SELECT Id FROM Platformy WHERE Nazwa = 'PlayStation 5'), '2021-08-23'),
+    ((SELECT Id FROM Gry WHERE Tytul = 'FIFA 23'), (SELECT Id FROM Platformy WHERE Nazwa = 'Xbox Series X'), '2021-08-24'),
+    ((SELECT Id FROM Gry WHERE Tytul = 'Cyberpunk 2088'), (SELECT Id FROM Platformy WHERE Nazwa = 'PlayStation 5'), '2021-08-25');
+
+GO;
+
+-- Dodaj recenzje od krytyków niewspółpracujących z wydawcami
+INSERT INTO Recenzje (Tytul, Zawartosc, DataOpublikowania, IdPlatformy, IdGry, Ocena)
+VALUES
+    ('Recenzja Battlefield V!', 'Doskonała gra wojenna, bez zbędnych błędów.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'Xbox Series X'), (SELECT Id FROM Gry WHERE Tytul = 'Battlefield V'), 92),
+    ('Recenzja Call of Duty: Warzone!', 'Znakomity tryb battle royale, świetna zabawa.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'PlayStation 5'), (SELECT Id FROM Gry WHERE Tytul = 'Call of Duty: Warzone'), 88),
+    ('Recenzja Assassin''s Creed Odyssey!', 'Przygoda na najwyższym poziomie, pełna emocji.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'Xbox Series X'), (SELECT Id FROM Gry WHERE Tytul = 'Assassin''s Creed Odyssey'), 90),
+    ('Recenzja Red Dead Redemption 2!', 'Kowbojski epik, którego nie można przegapić.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'PlayStation 5'), (SELECT Id FROM Gry WHERE Tytul = 'Red Dead Redemption 2'), 94),
+    ('Recenzja FIFA 23!', 'Najlepsza gra piłkarska na rynku, doskonała rozrywka.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'Xbox Series X'), (SELECT Id FROM Gry WHERE Tytul = 'FIFA 23'), 90),
+    ('Recenzja Cyberpunk 2088!', 'Nowe spojrzenie na świat cyberpunku, pełne innowacji.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'PlayStation 5'), (SELECT Id FROM Gry WHERE Tytul = 'Cyberpunk 2088'), 86);
+GO;
+-- Dodaj oceny gier od krytyków niewspółpracujących z wydawcami
+INSERT INTO KrytycyRecenzje (IdKrytyka, IdRecenzji)
+VALUES
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk1' AND Nazwisko = 'Bezstronny'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja Battlefield V')),
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk2' AND Nazwisko = 'Niepowiązany'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja Call of Duty: Warzone')),
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk3' AND Nazwisko = 'Obiektywny'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja Assassin''s Creed Odyssey')),
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk1' AND Nazwisko = 'Bezstronny'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja Red Dead Redemption 2')),
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk2' AND Nazwisko = 'Niepowiązany'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja FIFA 23')),
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk3' AND Nazwisko = 'Obiektywny'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja Cyberpunk 2088')),
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk1' AND Nazwisko = 'Bezstronny'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja Battlefield V!')),
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk2' AND Nazwisko = 'Niepowiązany'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja Call of Duty: Warzone!')),
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk3' AND Nazwisko = 'Obiektywny'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja Assassin''s Creed Odyssey!')),
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk1' AND Nazwisko = 'Bezstronny'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja Red Dead Redemption 2!')),
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk2' AND Nazwisko = 'Niepowiązany'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja FIFA 23!')),
+    ((SELECT Id FROM Krytycy WHERE Imie = 'Krytyk3' AND Nazwisko = 'Obiektywny'), (SELECT Id FROM Recenzje WHERE Tytul = 'Recenzja Cyberpunk 2088!'));
+GO;

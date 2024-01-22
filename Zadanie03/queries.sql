@@ -37,7 +37,7 @@ WITH SrednieOceny AS (
     GROUP BY
         GN.IdGry
     HAVING
-        COUNT(*) >= 2 -- Zmienna X oznacza minimalną liczbę recenzji
+        COUNT(*) >= 2
 )
 
 SELECT
@@ -111,11 +111,42 @@ WHERE (CAST(ISNULL(SO.IloscOcenWiecejNiz75, 0)+1 AS FLOAT) / CAST(ISNULL(SO.Ilos
                      którzy wydali mniej niż 3 gry.                   
 */
 
+WITH RankingWydawcow AS (
+    SELECT
+        W.Id AS IdWydawcy,
+        W.Nazwa AS NazwaWydawcy,
+        COUNT(DISTINCT G.Id) AS IloscGier,
+        COUNT(DISTINCT R.Id) AS IloscPozytywnychRecenzji
+    FROM
+        Wydawcy W
+            JOIN Gry G ON W.Id = G.IdWydawcy
+            LEFT JOIN Recenzje R ON G.Id = R.IdGry
+            LEFT JOIN KrytycyRecenzje KR ON R.Id = KR.IdRecenzji
+            LEFT JOIN Krytycy K ON KR.IdKrytyka = K.Id
+      WHERE R.Ocena > 75 -- Pozytywna recenzja
+      AND K.Id NOT IN (SELECT IdKrytyka FROM KrytycyWydawcy WHERE IdWydawcy LIKE W.Id)
+    GROUP BY
+        W.Id, W.Nazwa
+    HAVING
+        COUNT(DISTINCT G.Id) >= 1 -- Wydawcy z co najmniej 3 grami
+)
+
+SELECT TOP 10
+    NazwaWydawcy,
+    IloscGier,
+    IloscPozytywnychRecenzji
+FROM
+    RankingWydawcow
+ORDER BY
+    IloscPozytywnychRecenzji DESC;
+
+
 /*
     Zapytanie 06:    Znajdź trzech najmniej uczciwych producentów, tj. takich, których gry otrzymały
                      najwięcej pozytywnych (>75 pkt.) recenzji od krytyków współpracujących z ich
                      wydawcami.
 */
+
 
 /*
     Zapytanie 07: 
