@@ -171,13 +171,98 @@ DROP VIEW WysokieOcenyPochodzaceZeSponsorowanychRecenzji;
 GO;
 
 /*
-    Zapytanie 07:   Zrób sprawozdanie średniej oceny tagów wg. miesiąca publikacji recenzji do gry opisywanej tym tagiem.
+    Zapytanie 07:   Zrób sprawozdanie wyznaczające jakie tagi uzyskały najwysze oceny na podstawie recenzji gier ich zawierających. Wynikiem powinna być lista najlepiej ocenianych tagów wraz z miesiącem oraz uzyskaną średnią.
 */
+
+CREATE VIEW ZbiorTagowMiesiacaPublikacjiIOceny AS    
+SELECT Tagi.Nazwa, MONTH(Recenzje.DataOpublikowania) AS Miesiac, Ocena
+FROM Recenzje
+INNER JOIN dbo.GryNaPlatformach GNP on Recenzje.IdGry = GNP.IdGry and Recenzje.IdPlatformy = GNP.IdPlatformy
+INNER JOIN Gry ON GNP.IdGry = Gry.Id
+INNER JOIN GryTagi ON Gry.Id = GryTagi.IdGry
+INNER JOIN Tagi ON GryTagi.IdTagu = Tagi.Id;
+GO;
+
+WITH Ranking AS (
+    SELECT
+        Nazwa,
+        Miesiac,
+        AVG(Ocena) AS SredniaOcenaTaguWMiesiacu,
+        DENSE_RANK() OVER (PARTITION BY Miesiac ORDER BY AVG(Ocena)) AS Rank
+    FROM
+        ZbiorTagowMiesiacaPublikacjiIOceny
+    GROUP BY
+        Nazwa,
+        Miesiac
+)
+SELECT
+    Nazwa,
+    Miesiac,
+    SredniaOcenaTaguWMiesiacu
+FROM Ranking
+WHERE Rank = 1;
+
+DROP VIEW ZbiorTagowMiesiacaPublikacjiIOceny;
+GO;
 
 /*
     Zapytanie 08:   Zestawienie krytyków i jak wiele recenezji dotyczyło gier wydanych dla każdej z platform.
 */
 
+CREATE VIEW PelneRecenzjeKrytykow
+AS
+    SELECT Imie, Nazwisko, Nazwa AS Platforma, Recenzje.Tytul AS Tytul, Ocena, Zawartosc, DataOpublikowania, Gry.Tytul AS Gra 
+    FROM Krytycy
+    INNER JOIN KrytycyRecenzje ON Krytycy.Id = KrytycyRecenzje.IdKrytyka
+    INNER JOIN Recenzje ON KrytycyRecenzje.IdRecenzji = Recenzje.Id
+    INNER JOIN GryNaPlatformach ON Recenzje.IdGry = GryNaPlatformach.IdGry and Recenzje.IdPlatformy = GryNaPlatformach.IdPlatformy
+    INNER JOIN Gry ON GryNaPlatformach.IdGry = Gry.Id
+    INNER JOIN Platformy ON GryNaPlatformach.IdPlatformy = Platformy.Id;
+GO;
+    
+SELECT Imie + ' ' + Nazwisko AS Krytyk, Platforma, COUNT(*) AS LiczbaOcenionychGierNaPlatformie
+FROM PelneRecenzjeKrytykow
+GROUP BY Imie, Nazwisko, Platforma
+ORDER BY COUNT(*) DESC;
+
+DROP VIEW PelneRecenzjeKrytykow;
+GO;
+
 /*
-    Zapytanie 09:   Posortuj wydawców po ilości opinii i recenzji napisanych dla ich gier, które zostały wydane na platformę X. 
+    
+    Zapytanie 09:   Wskaż którzy wydawcy byli najbardziej popularni pod względem ilości opinii i recenzji dla każdej platformy.
 */
+
+CREATE VIEW OpinieIRecenzjeGier
+AS
+    SELECT Wydawca, Platforma, COUNT(*) AS Liczba
+    FROM (
+             SELECT Recenzje.Tytul AS Tytul, Zawartosc, DataOpublikowania, Platformy.Nazwa AS Platforma, Gry.Tytul AS TytulGry, Ocena, Wydawcy.Nazwa AS Wydawca
+             FROM Recenzje
+                      INNER JOIN GryNaPlatformach ON Recenzje.IdGry = GryNaPlatformach.IdGry and Recenzje.IdPlatformy = GryNaPlatformach.IdPlatformy
+                      INNER JOIN Platformy ON Recenzje.IdPlatformy = Platformy.Id
+                      INNER JOIN Gry ON GryNaPlatformach.IdGry = Gry.Id
+                      INNER JOIN Wydawcy ON Gry.IdWydawcy = Wydawcy.Id
+             UNION
+             SELECT Opinie.Tytul AS Tytul, Zawartosc, DataOpublikowania, Platformy.Nazwa AS Platforma, Gry.Tytul AS TytulGry, Ocena, Wydawcy.Nazwa AS Wydawca
+             FROM Opinie
+                      INNER JOIN dbo.OpinieGryNaPlatformach OGNP on Opinie.Id = OGNP.IdOpinii
+                      INNER JOIN dbo.GryNaPlatformach GNP on OGNP.IdGry = GNP.IdGry and OGNP.IdPlatformy = GNP.IdPlatformy
+                      INNER JOIN Platformy ON GNP.IdPlatformy = Platformy.Id
+                      INNER JOIN Gry ON GNP.IdGry = Gry.Id
+                      INNER JOIN Wydawcy ON Gry.IdWydawcy = Wydawcy.Id
+         ) as TEMP
+    GROUP BY Wydawca, Platforma
+GO;
+
+SELECT Wydawca, OpinieIRecenzjeGier.Platforma
+FROM OpinieIRecenzjeGier
+INNER JOIN (
+    SELECT Platforma, MAX(Liczba) AS MaxLiczba, MIN(Liczba) AS MinLiczba
+    FROM OpinieIRecenzjeGier
+    GROUP BY Platforma
+) L ON OpinieIRecenzjeGier.Platforma = L.Platforma
+WHERE Liczba = MaxLiczba;
+
+DROP VIEW OpinieIRecenzjeGier;
+GO;
