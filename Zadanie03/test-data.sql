@@ -210,5 +210,6 @@ INSERT INTO ListyUlubionychGierGry (IdListy, IdGry) VALUES
 GO;
 
 INSERT INTO KrytycyWydawcy (IdKrytyka, IdWydawcy) VALUES
-                                                      ((SELECT Id FROM Krytycy WHERE Nazwisko LIKE 'Bezstronny'), (SELECT Id FROM Wydawcy WHERE Nazwa LIKE 'EA'));
+                                                      ((SELECT Id FROM Krytycy WHERE Nazwisko LIKE 'Bezstronny'), (SELECT Id FROM Wydawcy WHERE Nazwa LIKE 'EA')),
+                                                      ((SELECT Id FROM Krytycy WHERE Nazwisko LIKE 'Doe'), (SELECT Id FROM Wydawcy WHERE Nazwa LIKE 'CD Projekt Red'));
 GO;

@@ -147,7 +147,37 @@ ORDER BY
                      wydawcami.
 */
 
+CREATE VIEW WysokieOcenyPochodzaceZeSponsorowanychRecenzji
+AS
+SELECT Krytycy.Id AS IdKrytyka, Wydawcy.Id AS IdWydawnictwa, Gry.Tytul AS TytulRecenzowanejGry, Recenzje.Ocena AS Ocena
+FROM Recenzje
+INNER JOIN KrytycyRecenzje ON Recenzje.Id = KrytycyRecenzje.IdRecenzji
+INNER JOIN Krytycy ON KrytycyRecenzje.IdKrytyka = Krytycy.Id
+INNER JOIN GryNaPlatformach ON Recenzje.IdGry = GryNaPlatformach.IdGry and Recenzje.IdPlatformy = GryNaPlatformach.IdPlatformy
+INNER JOIN Gry ON GryNaPlatformach.IdGry = Gry.Id
+JOIN KrytycyWydawcy ON Krytycy.Id = KrytycyWydawcy.IdKrytyka
+INNER JOIN Wydawcy ON Gry.IdWydawcy = Wydawcy.Id
+WHERE Gry.IdWydawcy = KrytycyWydawcy.IdWydawcy
+AND Ocena > 75;
+GO;
+
+SELECT TOP (3) Wydawcy.Nazwa, COUNT(*) AS LiczbaBardzoPozytywnychOcenOdWspolpracujacychRecenzentow
+FROM WysokieOcenyPochodzaceZeSponsorowanychRecenzji
+INNER JOIN Wydawcy ON Wydawcy.Id = IdWydawnictwa
+GROUP BY Wydawcy.Nazwa
+ORDER BY COUNT(*) DESC;
+
+DROP VIEW WysokieOcenyPochodzaceZeSponsorowanychRecenzji;
+GO;
 
 /*
-    Zapytanie 07: 
+    Zapytanie 07:   Zrób sprawozdanie średniej oceny tagów wg. miesiąca publikacji recenzji do gry opisywanej tym tagiem.
+*/
+
+/*
+    Zapytanie 08:   Zestawienie krytyków i jak wiele recenezji dotyczyło gier wydanych dla każdej z platform.
+*/
+
+/*
+    Zapytanie 09:   Posortuj wydawców po ilości opinii i recenzji napisanych dla ich gier, które zostały wydane na platformę X. 
 */
