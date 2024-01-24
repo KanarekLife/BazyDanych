@@ -108,7 +108,7 @@ WHERE (CAST(ISNULL(SO.IloscOcenWiecejNiz75, 0)+1 AS FLOAT) / CAST(ISNULL(SO.Ilos
 /*
     Zapytanie 05:    Sporządź ranking 10 wydawców, których wydane gry mają najwięcej pozytywnych
                      recenzji krytyków niewspółpracujących z nimi. Nie bierz pod uwagę wydawców,
-                     którzy wydali mniej niż 3 gry.                   
+                     którzy wydali mniej niż 2 gry.                   
 */
 
 WITH RankingWydawcow AS (
@@ -128,7 +128,7 @@ WITH RankingWydawcow AS (
     GROUP BY
         W.Id, W.Nazwa
     HAVING
-        COUNT(DISTINCT G.Id) >= 1 -- Wydawcy z co najmniej 3 grami
+        COUNT(DISTINCT G.Id) >= 2 -- Wydawcy z co najmniej 2 grami
 )
 
 SELECT TOP 10

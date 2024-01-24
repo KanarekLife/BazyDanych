@@ -3,7 +3,11 @@ INSERT INTO Wydawcy (Nazwa) VALUES
                                 ('EA'),
                                 ('Ubisoft'),
                                 ('Activision'),
-                                ('CD Projekt RED');
+                                ('CD Projekt RED'),
+                                ('Rockstar Games'),
+                                ('Capcom'),
+                                ('Bethesda Softworks'),
+                                ('Square Enix');
 GO;
 -- Dodaj przykładowych producentów
 INSERT INTO Producenci (Nazwa) VALUES
@@ -205,13 +209,7 @@ INSERT INTO OpinieGracze (IdOpinii, IdGracza) VALUES
                                                   ((SELECT Id FROM Opinie WHERE Tytul = 'Opinia Trolla o grze 19'), (SELECT Id FROM Gracze WHERE Pseudonim = 'Gracz11')),
                                                   ((SELECT Id FROM Opinie WHERE Tytul = 'Opinia Trolla o grze 20'), (SELECT Id FROM Gracze WHERE Pseudonim = 'Gracz11'));
 GO;
--- Dodaj brakujące wydawcy
-INSERT INTO Wydawcy (Nazwa) VALUES
-                                ('Rockstar Games'),
-                                ('Capcom'),
-                                ('Bethesda Softworks'),
-                                ('Square Enix');
-GO;
+
 -- Dodaj brakujących producentów
 INSERT INTO Producenci (Nazwa) VALUES
                                    ('BioWare'),
@@ -283,6 +281,7 @@ VALUES
     ('Recenzja FIFA 23!', 'Najlepsza gra piłkarska na rynku, doskonała rozrywka.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'Xbox Series X'), (SELECT Id FROM Gry WHERE Tytul = 'FIFA 23'), 90),
     ('Recenzja Cyberpunk 2088!', 'Nowe spojrzenie na świat cyberpunku, pełne innowacji.', GETDATE(), (SELECT Id FROM Platformy WHERE Nazwa = 'PlayStation 5'), (SELECT Id FROM Gry WHERE Tytul = 'Cyberpunk 2088'), 86);
 GO;
+
 -- Dodaj oceny gier od krytyków niewspółpracujących z wydawcami
 INSERT INTO KrytycyRecenzje (IdKrytyka, IdRecenzji)
 VALUES
