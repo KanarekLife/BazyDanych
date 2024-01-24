@@ -7,38 +7,46 @@
                      przyciągania użytkowników.
 */
 
-SELECT Gry.Tytul, Tagi.Nazwa
-FROM Gry
-INNER JOIN GryTagi ON Gry.Id = GryTagi.IdGry
-INNER JOIN Tagi ON GryTagi.IdTagu = Tagi.Id
-WHERE Gry.Id IN (
-    SELECT DISTINCT IdGry
-    FROM Recenzje
-             INNER JOIN KrytycyRecenzje ON Recenzje.Id = KrytycyRecenzje.IdRecenzji
-             INNER JOIN Krytycy ON KrytycyRecenzje.IdKrytyka = Krytycy.Id
-    WHERE Krytycy.Imie LIKE 'Mike'
-);
+CREATE VIEW RecenzjeKrytyka AS
+SELECT DISTINCT R.IdGry
+FROM Recenzje R
+INNER JOIN KrytycyRecenzje KR ON R.Id = KR.IdRecenzji
+INNER JOIN Krytycy K ON KR.IdKrytyka = K.Id
+WHERE K.Imie LIKE 'Mike';
+GO;
+
+SELECT G.Tytul, T.Nazwa
+FROM Gry G
+INNER JOIN GryTagi GT ON G.Id = GT.IdGry
+INNER JOIN Tagi T ON GT.IdTagu = T.Id
+WHERE G.Id IN (SELECT IdGry FROM RecenzjeKrytyka)
+GROUP BY G.Tytul, T.Nazwa
+ORDER BY G.Tytul;
+
+DROP VIEW RecenzjeKrytyka;
+GO;
+
 
 /*
     Zapytanie 02:    Pokaż ranking gier wideo według średniej oceny krytyków, uwzględniając tylko
-                     gry, które otrzymały co najmniej X recenzji.
+                     gry, które otrzymały co najmniej 2 recenzje.
     
     Uzasadnienie:    Firma chce stworzyć ranking najlepszych gier, bazując na ocenach krytyków, ale
                      z wykluczeniem gier z niską liczbą recenzji, co zwiększa wiarygodność rankingu.
 */
 
-WITH SrednieOceny AS (
-    SELECT
-        GN.IdGry,
-        AVG(R.Ocena) AS SredniaOcena
-    FROM
-        GryNaPlatformach GN
-            JOIN Recenzje R ON GN.IdGry = R.IdGry AND GN.IdPlatformy = R.IdPlatformy
-    GROUP BY
-        GN.IdGry
-    HAVING
-        COUNT(*) >= 2
-)
+CREATE VIEW SrednieOceny AS
+SELECT
+    GN.IdGry,
+    AVG(R.Ocena) AS SredniaOcena
+FROM
+    GryNaPlatformach GN
+        JOIN Recenzje R ON GN.IdGry = R.IdGry AND GN.IdPlatformy = R.IdPlatformy
+GROUP BY
+    GN.IdGry
+HAVING
+    COUNT(*) >= 2;
+GO;
 
 SELECT
     G.Tytul AS TytulGry,
@@ -49,6 +57,8 @@ FROM
 ORDER BY
     SO.SredniaOcena DESC;
 
+DROP VIEW SrednieOceny;
+GO;
 
     
 /*
@@ -59,21 +69,28 @@ ORDER BY
                      graczy, co może pomóc w zrozumieniu recepcji gry przez społeczność.
 */
 
-SELECT RECOPI.Tytul, RECOPI.Ocena, RECOPI.DataOpublikowania
-FROM (
-         SELECT Gry.Tytul, Recenzje.Ocena, Recenzje.DataOpublikowania
-         FROM Recenzje
-                  INNER JOIN dbo.GryNaPlatformach GNP on Recenzje.IdGry = GNP.IdGry and Recenzje.IdPlatformy = GNP.IdPlatformy
-                  INNER JOIN Gry ON GNP.IdGry = Gry.Id
-         UNION
-         SELECT Gry.Tytul, Opinie.Ocena, Opinie.DataOpublikowania
-         FROM Opinie
-                  INNER JOIN dbo.OpinieGryNaPlatformach OGNP on Opinie.Id = OGNP.IdOpinii
-                  INNER JOIN Gry ON OGNP.IdGry = Gry.Id
-     ) RECOPI
-WHERE RECOPI.Tytul LIKE 'Cyberpunk 2077';
+CREATE VIEW RecenzjeIOpinie
+AS
+    SELECT DataOpublikowania, Gry.Tytul AS TytulGry, Ocena
+    FROM Recenzje
+             INNER JOIN GryNaPlatformach ON Recenzje.IdGry = GryNaPlatformach.IdGry and Recenzje.IdPlatformy = GryNaPlatformach.IdPlatformy
+             INNER JOIN Gry ON GryNaPlatformach.IdGry = Gry.Id
+    UNION
+    SELECT DataOpublikowania,  Gry.Tytul AS TytulGry, Ocena
+    FROM Opinie
+             INNER JOIN dbo.OpinieGryNaPlatformach OGNP on Opinie.Id = OGNP.IdOpinii
+             INNER JOIN dbo.GryNaPlatformach GNP on OGNP.IdGry = GNP.IdGry and OGNP.IdPlatformy = GNP.IdPlatformy
+             INNER JOIN Gry ON GNP.IdGry = Gry.Id
+GO;
 
+DECLARE @TytulGry nvarchar(max) = 'Cyberpunk 2077';
+SELECT TytulGry, Ocena, DataOpublikowania
+FROM RecenzjeIOpinie
+WHERE TytulGry LIKE @TytulGry
+ORDER BY Ocena DESC;
 
+DROP VIEW RecenzjeIOpinie;
+GO;
 
 /*
     Zapytanie 04:    Wśród użytkowników oceniających gry ukrywają się trolle. Wykonaj zestawienie
@@ -82,28 +99,32 @@ WHERE RECOPI.Tytul LIKE 'Cyberpunk 2077';
                      swoim koncie żadnej listy ulubionych gier.
 */
 
-WITH StatystykaOcen AS (
-    SELECT
-        G.Id,
-        COUNT(CASE WHEN CAST(O.Ocena AS FLOAT) < 25 THEN 1 END) AS IloscOcenMniejNiz25,
-        COUNT(CASE WHEN CAST(O.Ocena AS FLOAT) > 75 THEN 1 END) AS IloscOcenWiecejNiz75
-    FROM
-        Opinie O
-            JOIN OpinieGracze OG ON O.Id = OG.IdOpinii
-            JOIN Gracze G ON OG.IdGracza = G.Id
-    GROUP BY
-        G.Id
-)
+CREATE VIEW StatystykaOcen AS
+SELECT
+    G.Id,
+    COUNT(CASE WHEN CAST(O.Ocena AS FLOAT) < 25 THEN 1 END) AS IloscOcenMniejNiz25,
+    COUNT(CASE WHEN CAST(O.Ocena AS FLOAT) > 75 THEN 1 END) AS IloscOcenWiecejNiz75
+FROM
+    Opinie O
+        JOIN OpinieGracze OG ON O.Id = OG.IdOpinii
+        JOIN Gracze G ON OG.IdGracza = G.Id
+GROUP BY
+    G.Id;
+GO;
 
 SELECT
     G.Pseudonim AS Gracz,
     ISNULL(SO.IloscOcenMniejNiz25, 0) AS IloscOcenMniejNiz25,
     ISNULL(SO.IloscOcenWiecejNiz75, 0) AS IloscOcenWiecejNiz75,
-    (CAST(ISNULL(SO.IloscOcenWiecejNiz75, 0)+1 AS FLOAT) / CAST(ISNULL(SO.IloscOcenMniejNiz25, 0)+1 AS FLOAT)) AS StosunekPozytywnychDoNegatywnychOpinii
+    (CAST(ISNULL(SO.IloscOcenWiecejNiz75, 0) + 1 AS FLOAT) / CAST(ISNULL(SO.IloscOcenMniejNiz25, 0) + 1 AS FLOAT)) AS StosunekPozytywnychDoNegatywnychOpinii
 FROM
     Gracze G
         LEFT JOIN StatystykaOcen SO ON G.Id = SO.Id
-WHERE (CAST(ISNULL(SO.IloscOcenWiecejNiz75, 0)+1 AS FLOAT) / CAST(ISNULL(SO.IloscOcenMniejNiz25, 0)+1 AS FLOAT)) < 0.1;
+WHERE (CAST(ISNULL(SO.IloscOcenWiecejNiz75, 0) + 1 AS FLOAT) / CAST(ISNULL(SO.IloscOcenMniejNiz25, 0) + 1 AS FLOAT)) < 0.1
+ORDER BY Gracz;
+
+DROP VIEW IF EXISTS StatystykaOcen;
+GO;
 
 /*
     Zapytanie 05:    Sporządź ranking 10 wydawców, których wydane gry mają najwięcej pozytywnych
@@ -111,34 +132,38 @@ WHERE (CAST(ISNULL(SO.IloscOcenWiecejNiz75, 0)+1 AS FLOAT) / CAST(ISNULL(SO.Ilos
                      którzy wydali mniej niż 2 gry.                   
 */
 
-WITH RankingWydawcow AS (
-    SELECT
-        W.Id AS IdWydawcy,
-        W.Nazwa AS NazwaWydawcy,
-        COUNT(DISTINCT G.Id) AS IloscGier,
-        COUNT(DISTINCT R.Id) AS IloscPozytywnychRecenzji
-    FROM
-        Wydawcy W
-            JOIN Gry G ON W.Id = G.IdWydawcy
-            LEFT JOIN Recenzje R ON G.Id = R.IdGry
-            LEFT JOIN KrytycyRecenzje KR ON R.Id = KR.IdRecenzji
-            LEFT JOIN Krytycy K ON KR.IdKrytyka = K.Id
-      WHERE R.Ocena > 75 -- Pozytywna recenzja
-      AND K.Id NOT IN (SELECT IdKrytyka FROM KrytycyWydawcy WHERE IdWydawcy LIKE W.Id)
-    GROUP BY
-        W.Id, W.Nazwa
-    HAVING
-        COUNT(DISTINCT G.Id) >= 2 -- Wydawcy z co najmniej 2 grami
-)
+CREATE VIEW RankingWydawcowView AS
+SELECT
+    W.Id AS IdWydawcy,
+    W.Nazwa AS NazwaWydawcy,
+    COUNT(DISTINCT G.Id) AS IloscGier,
+    COUNT(DISTINCT R.Id) AS IloscPozytywnychRecenzji
+FROM
+    Wydawcy W
+        JOIN Gry G ON W.Id = G.IdWydawcy
+        LEFT JOIN Recenzje R ON G.Id = R.IdGry
+        LEFT JOIN KrytycyRecenzje KR ON R.Id = KR.IdRecenzji
+        LEFT JOIN Krytycy K ON KR.IdKrytyka = K.Id
+WHERE
+    R.Ocena > 75
+  AND K.Id NOT IN (SELECT IdKrytyka FROM KrytycyWydawcy WHERE IdWydawcy = W.Id)
+GROUP BY
+    W.Id, W.Nazwa
+HAVING
+    COUNT(DISTINCT G.Id) >= 2
+GO;
 
 SELECT TOP 10
     NazwaWydawcy,
     IloscGier,
     IloscPozytywnychRecenzji
 FROM
-    RankingWydawcow
+    RankingWydawcowView
 ORDER BY
     IloscPozytywnychRecenzji DESC;
+
+DROP VIEW IF EXISTS RankingWydawcowView;
+GO;
 
 
 /*
@@ -171,7 +196,8 @@ DROP VIEW WysokieOcenyPochodzaceZeSponsorowanychRecenzji;
 GO;
 
 /*
-    Zapytanie 07:   Zrób sprawozdanie wyznaczające jakie tagi uzyskały najwysze oceny na podstawie recenzji gier ich zawierających. Wynikiem powinna być lista najlepiej ocenianych tagów wraz z miesiącem oraz uzyskaną średnią.
+    Zapytanie 07:   Firma tworząca gry wideo ma zamiar zaplanować wydanie nowej gry, aczkolwiek nie wiedzą jakiego typu grę chcą zrobić. Proszą admina strony o stworzenie sprawozdania wyznaczającego jakie tagi uzyskały najwysze oceny w danych miesiącach na podstawie recenzji gier. 
+                    Wynikiem powinna być lista najlepiej ocenianych tagów wraz z miesiącem oraz uzyskaną średnią.
 */
 
 CREATE VIEW ZbiorTagowMiesiacaPublikacjiIOceny AS    
@@ -206,7 +232,7 @@ DROP VIEW ZbiorTagowMiesiacaPublikacjiIOceny;
 GO;
 
 /*
-    Zapytanie 08:   Zestawienie krytyków i jak wiele recenezji dotyczyło gier wydanych dla każdej z platform.
+    Zapytanie 08:   Dział marketingowy platformy X jest zainteresowany statystykami dotyczącymi ilości krytyków korzystających z ich platformy. Utwórz zestawienie krytyków i jak wiele recenzji dotyczyło gier wydanych dla każdej z platform.
 */
 
 CREATE VIEW PelneRecenzjeKrytykow
@@ -230,7 +256,8 @@ GO;
 
 /*
     
-    Zapytanie 09:   Wskaż którzy wydawcy byli najbardziej popularni pod względem ilości opinii i recenzji dla każdej platformy.
+    Zapytanie 09:   Dziennikarz zajmujący się grami wideo, chciałby przygotować zestawienie zaweirające informację o tym jakie wydawnictwo było najbardziej popularne wśród krytyków i użytkowników używających danej platformy.
+                    Wskaż którzy wydawcy byli najbardziej popularni pod względem ilości opinii i recenzji dla każdej platformy.
 */
 
 CREATE VIEW OpinieIRecenzjeGier
