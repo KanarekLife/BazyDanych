@@ -1,4 +1,6 @@
-﻿/*
+﻿-- Stanisław Nieradko 193044
+
+/*
     Zapytanie 01:    Pokaż wszystkie gry wraz z ich tagami, które otrzymały recenzje od krytyka o imieniu 'X'.
     
     Uzasadnienie:    Firma chce lepiej zrozumieć preferencje krytyka o imieniu 'X', aby dostosować
